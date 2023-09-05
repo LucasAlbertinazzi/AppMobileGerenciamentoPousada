@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="AppPousadaPeNaTerra.Views.VNewContagem"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="VNewContagem"
+    Loaded="ContentPage_Loaded">
+    <Grid>
+        <Image Aspect="AspectFill" Source="fundo.svg" />
+        <ActivityIndicator
+            x:Name="LoadingIndicator"
+            HorizontalOptions="CenterAndExpand"
+            IsRunning="False"
+            IsVisible="False"
+            VerticalOptions="CenterAndExpand"
+            Color="White" />
+        <StackLayout x:Name="stackPrincipal" Padding="10">
+
+            <!--#region Linha 0 - Selecionar o local-->
+            <StackLayout Orientation="Horizontal">
+                <Label
+                    Grid.Column="0"
+                    HorizontalOptions="StartAndExpand"
+                    Style="{StaticResource labelView}"
+                    Text="Local:" />
+                <Label
+                    x:Name="lastId"
+                    Grid.Column="1"
+                    FlowDirection="RightToLeft"
+                    HorizontalOptions="EndAndExpand"
+                    Style="{StaticResource labelView}" />
+            </StackLayout>
+            <Frame Style="{StaticResource frameView}">
+                <Picker
+                    x:Name="_listaLocal"
+                    Title="Selecione o local..."
+                    ItemDisplayBinding="{Binding Local}"
+                    ItemsSource="{Binding lista}"
+                    Style="{StaticResource PickerPadrao}" />
+            </Frame>
+            <!--#endregion-->
+
+            <!--#region 1 - Seleciona/ Pesquisa itens-->
+
+            <Label Style="{StaticResource labelView}" Text="Item:" />
+
+            <Frame MinimumHeightRequest="52" Style="{StaticResource frameView}">
+                <StackLayout Orientation="Horizontal">
+                    <Image
+                        Margin="5,0,5,0"
+                        Aspect="AspectFill"
+                        HeightRequest="22"
+                        Source="procurar.svg" />
+                    <Entry
+                        x:Name="sbItens"
+                        Placeholder="Digite o nome do item..."
+                        Style="{StaticResource entryLogin}"
+                        TextChanged="sbItens_TextChanged" />
+                </StackLayout>
+            </Frame>
+            <!--#endregion-->
+
+            <!--#region 2- Itens-->
+
+            <Grid Grid.Row="0" RowDefinitions="*">
+
+                <!--#region 2.1 - Lista de itens-->
+                <ScrollView
+                    x:Name="frItens"
+                    Margin="0,-2,0,0"
+                    IsVisible="False"
+                    Orientation="Vertical"
+                    VerticalOptions="Start"
+                    VerticalScrollBarVisibility="Never"
+                    ZIndex="1">
+                    <Frame IsClippedToBounds="False" Style="{StaticResource frameView}">
+                        <ListView
+                            x:Name="_listaItem"
+                            HasUnevenRows="True"
+                            ItemSelected="_listaItem_ItemSelected"
+                            ItemsSource="{Binding lista_itens}">
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <ViewCell>
+                                        <Label Style="{StaticResource labelCard}" Text="{Binding Descricao}" />
+                                    </ViewCell>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </Frame>
+                </ScrollView>
+                <!--#endregion-->
+
+                <!--#region 2.2 Card itens selecionados-->
+                <StackLayout ZIndex="0">
+
+                    <Label
+                        Style="{StaticResource labelView}"
+                        Text="Itens para contagem:"
+                        ZIndex="0" />
+
+                    <Frame
+                        Padding="5"
+                        Style="{StaticResource frameView}"
+                        ZIndex="0">
+                        <ScrollView HorizontalScrollBarVisibility="Always">
+                            <CollectionView x:Name="_listaCard" VerticalScrollBarVisibility="Default">
+                                <CollectionView.ItemTemplate>
+                                    <DataTemplate>
+                                        <Frame Style="{StaticResource frameItem}">
+                                            <StackLayout Orientation="Horizontal">
+                                                <Button
+                                                    x:Name="camera"
+                                                    Clicked="camera_Clicked"
+                                                    CornerRadius="6"
+                                                    MaximumWidthRequest="70"
+                                                    Style="{StaticResource btnCamera}"
+                                                    Text="{Binding IdItem}" />
+                                                <Label
+                                                    HorizontalOptions="StartAndExpand"
+                                                    Style="{StaticResource labelCard}"
+                                                    Text="{Binding Descricao}"
+                                                    TextColor="White" />
+                                                <Entry
+                                                    Focused="Entry_Focused"
+                                                    Keyboard="Numeric"
+                                                    MaxLength="7"
+                                                    MinimumWidthRequest="80"
+                                                    Style="{StaticResource entryItem}"
+                                                    Text="{Binding QuantidadeCont}"
+                                                    Unfocused="Entry_Unfocused" />
+                                            </StackLayout>
+                                        </Frame>
+                                    </DataTemplate>
+                                </CollectionView.ItemTemplate>
+                            </CollectionView>
+                        </ScrollView>
+                    </Frame>
+
+
+
+                </StackLayout>
+
+                <!--#endregion-->
+
+            </Grid>
+
+            <!--#endregion-->
+
+            <!--#endregion-->
+
+            <!--#region 2 - Botões-->
+            <StackLayout
+                Margin="0,15,0,0"
+                Orientation="Horizontal"
+                Spacing="10">
+                <Button
+                    x:Name="btnSalvar"
+                    Grid.Column="0"
+                    Clicked="btnSalvar_Clicked"
+                    HorizontalOptions="FillAndExpand"
+                    Style="{StaticResource btnCardGreen}"
+                    Text="Salvar" />
+                <Button
+                    x:Name="btnFinalizar"
+                    Grid.Column="1"
+                    Clicked="btnFinalizar_Clicked"
+                    HorizontalOptions="FillAndExpand"
+                    Style="{StaticResource btnCardYellow}"
+                    Text="Finalizar" />
+            </StackLayout>
+            <!--#endregion-->
+
+        </StackLayout>
+    </Grid>
+</ContentPage>
