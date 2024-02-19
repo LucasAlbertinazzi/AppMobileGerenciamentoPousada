@@ -1,4 +1,4 @@
-# AppMobilePousada
+# AppMobile - Gerenciamento Pousada
 
 README - Aplicativo da Pousada
 Descrição
