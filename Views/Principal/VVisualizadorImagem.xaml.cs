@@ -1,8 +1,8 @@
-using AppPousadaPeNaTerra.Classes.API.Principal;
-using AppPousadaPeNaTerra.Services.Principal;
-using AppPousadaPeNaTerra.Suporte;
+using AppGerenciamento.Classes.API.Principal;
+using AppGerenciamento.Services.Principal;
+using AppGerenciamento.Suporte;
 
-namespace AppPousadaPeNaTerra.Views.Principal;
+namespace AppGerenciamento.Views.Principal;
 
 public partial class VVisualizadorImagem : ContentPage
 {
@@ -11,6 +11,8 @@ public partial class VVisualizadorImagem : ContentPage
     private int currentIndex = 0;
 
     APIErroLog error = new();
+    ExceptionHandlingService _exceptionService = new();
+
     ImagensCache imagensCacheSup = new ImagensCache();
     #endregion
 
@@ -60,8 +62,8 @@ public partial class VVisualizadorImagem : ContentPage
         };
 
         await error.LogErro(erroLog);
+        await _exceptionService.ReportError(ex);
     }
-
 
     #endregion
 

@@ -1,14 +1,16 @@
-﻿using AppPousadaPeNaTerra.Classes.API.Principal;
-using AppPousadaPeNaTerra.Classes.Globais;
+﻿using AppGerenciamento.Classes.API.Principal;
+using AppGerenciamento.Classes.Globais;
+using AppGerenciamento.Suporte;
 using Newtonsoft.Json;
 using System.Text;
 
-namespace AppPousadaPeNaTerra.Services.Principal
+namespace AppGerenciamento.Services.Principal
 {
     public class APIVersaoApp
     {
         #region 1- LOG
         APIErroLog error = new();
+        ExceptionHandlingService _exceptionService = new();
 
         private async Task MetodoErroLog(Exception ex)
         {
@@ -24,7 +26,9 @@ namespace AppPousadaPeNaTerra.Services.Principal
             };
 
             await error.LogErro(erroLog);
-        }
+            await _exceptionService.ReportError(ex);
+            
+    }
         #endregion
 
         #region 2- API
@@ -83,10 +87,12 @@ namespace AppPousadaPeNaTerra.Services.Principal
                     return true; // Versão instalada está atualizada
                 }
 
+                InfoGlobal.LastVersao = string.Empty;
                 return false; // Versão instalada não está atualizada
             }
             catch (Exception ex)
             {
+                InfoGlobal.LastVersao = string.Empty;
                 await MetodoErroLog(ex);
                 return false;
             }

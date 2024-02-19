@@ -1,14 +1,15 @@
-using AppPousadaPeNaTerra.Classes.API.Auditoria;
-using AppPousadaPeNaTerra.Classes.API.Principal;
-using AppPousadaPeNaTerra.Classes.Globais;
-using AppPousadaPeNaTerra.Services.Auditoria;
-using AppPousadaPeNaTerra.Services.Principal;
-using AppPousadaPeNaTerra.Suporte;
-using AppPousadaPeNaTerra.Views.Principal;
+using AppGerenciamento.Classes.API.Auditoria;
+using AppGerenciamento.Classes.API.Principal;
+using AppGerenciamento.Classes.Globais;
+using AppGerenciamento.Services.Auditoria;
+using AppGerenciamento.Services.Principal;
+using AppGerenciamento.Suporte;
+using AppGerenciamento.Views.Principal;
+using Microsoft.Maui;
 using System.Globalization;
 using System.Text;
 
-namespace AppPousadaPeNaTerra.Views;
+namespace AppGerenciamento.Views;
 
 public partial class VNewContagem : ContentPage
 {
@@ -19,6 +20,8 @@ public partial class VNewContagem : ContentPage
     APIEnviaArquivos aPIEnviaArquivos = new APIEnviaArquivos();
 
     APIErroLog error = new();
+    ExceptionHandlingService _exceptionService = new();
+
 
     List<LocalClass> lista_local = new List<LocalClass>();
     List<ItensClass> lista_itens = new List<ItensClass>();
@@ -98,6 +101,7 @@ public partial class VNewContagem : ContentPage
         };
 
         await error.LogErro(erroLog);
+        await _exceptionService.ReportError(ex);
     }
 
     private async Task MetodosIniciais()
@@ -108,8 +112,6 @@ public partial class VNewContagem : ContentPage
 
             if (index == 0)
             {
-                btnSalvar.IsEnabled = true;
-                btnSalvar.IsVisible = true;
                 btnFinalizar.IsVisible = true;
                 camera = true;
 
@@ -119,7 +121,6 @@ public partial class VNewContagem : ContentPage
             }
             else if (index == 2)
             {
-                btnSalvar.IsVisible = false;
                 btnFinalizar.IsVisible = false;
                 _listaLocal.IsEnabled = false;
                 sbItens.IsReadOnly = true;
@@ -132,8 +133,6 @@ public partial class VNewContagem : ContentPage
             }
             else
             {
-                btnSalvar.IsEnabled = false;
-                btnSalvar.IsVisible = false;
                 camera = true;
 
                 await CarregaItens();
@@ -148,7 +147,7 @@ public partial class VNewContagem : ContentPage
         }
     }
 
-    private void Iniciais()
+    private async void Iniciais()
     {
         try
         {
@@ -161,7 +160,7 @@ public partial class VNewContagem : ContentPage
         }
         catch (Exception ex)
         {
-            MetodoErroLog(ex);
+            await MetodoErroLog(ex);
             return;
         }
     }
@@ -195,7 +194,7 @@ public partial class VNewContagem : ContentPage
             await MetodoErroLog(ex);
             return;
         }
-        
+
     }
 
     private int VerificaIndexLocal(string local, List<LocalClass> listaIndex)
@@ -254,16 +253,36 @@ public partial class VNewContagem : ContentPage
             foreach (var item in lista)
             {
                 var itens = await apiItens.ListaItensId((int)item.Iditem);
+                EstPrevistoClass est = await apiItens.EstoquePrevisto(item.Sku);
+
+                string estAtualPre = est.estprev.ToString();
+
+                if (index == 2)
+                {
+                    estAtualPre = item.EstoqueAtual.ToString();
+                }
 
                 card_itens.Add(new ItensClass
                 {
                     Descricao = itens[0].Descricao,
                     Sku = item.Sku,
                     IdItem = (int)item.Iditem,
-                    QuantidadeCont = item.Quantidade,
                     IdGrupo = item.Idgrupo,
                     IdCategoria = (int)item.Idcategoria,
-                    IdSubgrupo = item.Idsubgrupo
+                    IdSubgrupo = item.Idsubgrupo,
+                    QuantidadeCont = CalculadoraVolume.CalculaVolumePopup(item.Quantidade.ToString(), itens[0].QuantidadeMed, itens[0].Volume.ToString()),
+                    QuantidadeMed = itens[0].QuantidadeMed,
+                    Volume = itens[0].Volume,
+                    QuantidadeUn = item.Quantidade.ToString(),
+                    estPrevUn = itens[0].Unidade + "/",
+                    estPrevUnAp = itens[0].Unidade,
+                    estUnP = estAtualPre,
+                    estPrev = CalculadoraVolume.CalcularVolumeTotal(itens[0].Volume.ToString(), estAtualPre, itens[0].Unidade),
+                    estAntigo = est.estantigo.ToString(),
+                    vendaPeriodo = est.vendas.ToString(),
+                    Unidade = itens[0].Unidade,
+                    QtdFinalIten = CalculadoraVolume.QuantidadeFinalIten(itens[0].QuantidadeMed, itens[0].QuantidadeUn, itens[0].Volume.ToString()),
+                    ColorAviso = itens[0].ColorAviso
                 });
             }
 
@@ -325,7 +344,7 @@ public partial class VNewContagem : ContentPage
         }
     }
 
-    private void CriaCardItem(ItensClass lista)
+    private async void CriaCardItem(ItensClass lista, EstPrevistoClass listaPrev)
     {
         try
         {
@@ -336,44 +355,86 @@ public partial class VNewContagem : ContentPage
                     string x = item.QuantidadeCont;
                 }
             }
+
+            Color previsto = lista.ColorAviso;
+
+            string _estPrev = "0";
+
+            if (!string.IsNullOrEmpty(listaPrev.estprev.ToString()))
+            {
+                _estPrev = listaPrev.estprev.ToString();
+            }
+
+            string qtFinal = CalculadoraVolume.QuantidadeFinalIten(lista.QuantidadeMed, lista.QuantidadeUn, lista.Volume.ToString());
+
             card_itens.Add(new ItensClass
             {
                 Descricao = lista.Descricao,
                 Sku = lista.Sku,
                 IdItem = lista.IdItem,
-                QuantidadeCont = "0",
+                QuantidadeCont = CalculadoraVolume.CalculaVolumePopup(lista.QuantidadeCont, lista.QuantidadeMed, lista.Volume.ToString()),
+                QuantidadeMed = lista.QuantidadeMed,
+                Volume = lista.Volume,
+                QuantidadeUn = lista.QuantidadeUn,
                 IdGrupo = lista.IdGrupo,
                 IdCategoria = lista.IdCategoria,
                 IdSubgrupo = lista.IdSubgrupo,
+                estPrevUn = lista.Unidade + "/",
+                estPrevUnAp = lista.Unidade,
+                estUnP = listaPrev.estprev.ToString(),
+                estPrev = CalculadoraVolume.CalcularVolumeTotal(lista.Volume.ToString(), _estPrev, lista.Unidade),
+                estAntigo = listaPrev.estantigo.ToString(),
+                vendaPeriodo = listaPrev.vendas.ToString(),
+                Unidade = lista.Unidade,
+                ColorAviso = previsto,
+                QtdFinalIten = qtFinal
             });
 
             _listaCard.ItemsSource = card_itens.ToList();
-        }
-        catch (Exception ex)
-        {
-            MetodoErroLog(ex);
-            return;
-        }
-    }
 
-    private async void Aviso()
-    {
-        try
-        {
-            LocalClass lista = (LocalClass)_listaLocal.SelectedItem;
+            List<EstoquePreClass> pre = await VerificaIdLista();
 
-            if (index == 0)
+            LocalClass local = (LocalClass)_listaLocal.SelectedItem;
+
+            if (pre.Count > 0)
             {
-                if (card_itens.Count > 0 && lista != null)
+                if (!pre.Any(x => x.Iditem == lista.IdItem))
                 {
-                    if (await DisplayAlert("AVISO", "Deseja salvar a contagem?", "Sim", "Não"))
-                    {
-                        btnSalvar_Clicked(null, null);
-                    }
+                    EstoquePreClass preNewNew = new EstoquePreClass();
+
+                    preNewNew.Iditem = lista.IdItem;
+                    preNewNew.Idgrupo = lista.IdGrupo;
+                    preNewNew.Idcategoria = lista.IdCategoria;
+                    preNewNew.Idsubgrupo = lista.IdSubgrupo;
+                    preNewNew.Sku = lista.Sku;
+                    preNewNew.Idlocal = local.IdLocal;
+                    preNewNew.Usuario = InfoGlobal.usuario.ToUpper();
+                    preNewNew.Quantidade = Convert.ToDecimal(qtFinal);
+                    preNewNew.Datasave = DateTime.Now;
+                    preNewNew.Idlista = _idLista;
+
+                    await apiEstoque.AdicionaItensContPre(preNewNew);
                 }
             }
+            else
+            {
+                await apiEstoque.CriaPreviaContagemFull(AbasteceFull(local));
 
-            await Application.Current.MainPage.Navigation.PushAsync(new VMenuPrincipal());
+                EstoquePreClass preNewNew = new EstoquePreClass();
+
+                preNewNew.Iditem = lista.IdItem;
+                preNewNew.Idgrupo = lista.IdGrupo;
+                preNewNew.Idcategoria = lista.IdCategoria;
+                preNewNew.Idsubgrupo = lista.IdSubgrupo;
+                preNewNew.Sku = lista.Sku;
+                preNewNew.Idlocal = local.IdLocal;
+                preNewNew.Usuario = InfoGlobal.usuario.ToUpper();
+                preNewNew.Quantidade = Convert.ToDecimal(qtFinal);
+                preNewNew.Datasave = DateTime.Now;
+                preNewNew.Idlista = _idLista;
+
+                await apiEstoque.AdicionaItensContPre(preNewNew);
+            }
         }
         catch (Exception ex)
         {
@@ -404,30 +465,153 @@ public partial class VNewContagem : ContentPage
         }
     }
 
+    private EstoqueClass AbasteceFull(LocalClass local)
+    {
+        string grupos = string.Empty;
+        string categoria = string.Empty;
+
+        for (int i = 0; i < card_itens.Count; i++)
+        {
+            grupos += card_itens[i].IdGrupo.ToString() + ",";
+            categoria += card_itens[i].IdCategoria.ToString() + ",";
+        }
+
+        grupos = grupos.TrimEnd(',');
+        categoria = categoria.TrimEnd(',');
+
+        string usuario = InfoGlobal.usuario.ToUpper();
+
+        EstoqueClass full = new EstoqueClass();
+
+        full.IdLocal = local.IdLocal;
+        full.IdGrupo = grupos;
+        full.DataAbre = DateTime.Now;
+        full.UserAbre = usuario;
+        full.IdLista = _idLista;
+        full.IdCategoriaLista = categoria;
+
+        return full;
+    }
+
+    private EstoqueClass AbasteceFullFinaliza(LocalClass local)
+    {
+        string grupos = string.Empty;
+        string categoria = string.Empty;
+
+        for (int i = 0; i < card_itens.Count; i++)
+        {
+            grupos += card_itens[i].IdGrupo.ToString() + ",";
+            categoria += card_itens[i].IdCategoria.ToString() + ",";
+        }
+
+        grupos = grupos.TrimEnd(',');
+        categoria = categoria.TrimEnd(',');
+
+        string usuario = InfoGlobal.usuario.ToUpper();
+
+        EstoqueClass full = new EstoqueClass();
+
+        full.IdLocal = local.IdLocal;
+        full.IdGrupo = grupos;
+        full.DataFecha = DateTime.Now;
+        full.UserFecha = usuario;
+        full.IdLista = _idLista;
+        full.Finalizado = "S";
+        full.IdCategoriaLista = categoria;
+
+        return full;
+    }
+
+    private async Task<bool> AbasteceFinalizaItens()
+    {
+        List<SelectEstoqueAtual> newEst = new List<SelectEstoqueAtual>();
+
+        foreach (var item in card_itens)
+        {
+            newEst.Add(new SelectEstoqueAtual
+            {
+                IdItem = item.IdItem,
+                IdLista = _idLista,
+                Atual = Convert.ToDecimal(item.estPrev),
+                Sku = item.Sku
+            });
+        }
+
+        return await apiEstoque.AttHistorico(newEst);
+    }
+
+    private async Task<List<EstoquePreClass>> VerificaIdLista()
+    {
+        List<EstoquePreClass> lista = await apiEstoque.ContagemFastId(_idLista);
+
+        if (lista != null && lista.Count > 0)
+        {
+            return lista;
+        }
+
+        return new List<EstoquePreClass>();
+    }
+
+    private ItensClass AtuializaPropItens(ItensClass propAtual, List<ItensClass> propNova)
+    {
+        ItensClass novoItem = new ItensClass();
+
+        foreach (var item in propNova)
+        {
+            propAtual.Volume = item.Volume;
+            propAtual.Unidade = item.Unidade;
+            propAtual.Peso = item.Peso;
+            propAtual.Preco = item.Preco;
+
+            novoItem.QuantidadeUn = item.QuantidadeUn;
+            novoItem.QuantidadeCont = item.QuantidadeCont;
+            novoItem.QuantidadeMed = item.QuantidadeMed;
+            novoItem.QtdFinalIten = item.QtdFinalIten;
+            novoItem.estPrev = item.estPrev;
+            novoItem.estUnP = item.estUnP;
+            novoItem.estPrevUn = item.estPrevUn;
+            novoItem.estPrevUnAp = item.estPrevUnAp;
+            novoItem.IdItem = item.IdItem;
+            novoItem.IdLocal = item.IdLocal;
+            novoItem.SkuCb = item.SkuCb;
+            novoItem.CodItemCb = item.CodItemCb;
+            novoItem.Descricao = item.Descricao;
+            novoItem.estAntigo = item.estAntigo;
+            novoItem.vendaPeriodo = item.vendaPeriodo;
+            novoItem.Preco = item.Preco;
+            novoItem.IdCategoria = item.IdCategoria;
+            novoItem.IdGrupo = item.IdGrupo;
+            novoItem.IdSubgrupo = item.IdSubgrupo;
+            novoItem.Sku = item.Sku;
+            novoItem.Volume = item.Volume;
+            novoItem.Peso = item.Peso;
+            novoItem.Ativo = item.Ativo;
+            novoItem.CadastradoEm = item.CadastradoEm;
+            novoItem.CadastradoPor = item.CadastradoPor;
+            novoItem.AtualizadoEm = item.AtualizadoEm;
+            novoItem.AtualizadoPor = item.AtualizadoPor;
+            novoItem.IdReceita = item.IdReceita;
+            novoItem.Codbarra = item.Codbarra;
+            novoItem.InclusoReserva = item.InclusoReserva;
+            novoItem.PrecoReserva = item.PrecoReserva;
+            novoItem.LimiteReserva = item.LimiteReserva;
+            novoItem.DescricaoCozinha = item.DescricaoCozinha;
+            novoItem.RefeicaoCompleta = item.RefeicaoCompleta;
+            novoItem.ComplementoRefeicao = item.ComplementoRefeicao;
+            novoItem.Cozinha = item.Cozinha;
+            novoItem.BarPiscina = item.BarPiscina;
+            novoItem.Drink = item.Drink;
+            novoItem.Ean = item.Ean;
+            novoItem.Unidade = item.Unidade;
+            novoItem.IdFt = item.IdFt;
+        }
+
+        return novoItem;
+    }
+
     #endregion
 
     #region 4- Eventos de controle
-    private void Entry_Focused(object sender, FocusEventArgs e)
-    {
-        try
-        {
-            var entry = sender as Entry;
-            if (entry != null)
-            {
-                if (entry.Text == "0")
-                {
-                    entry.Text = string.Empty;
-                    entry.Focus();
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            MetodoErroLog(ex);
-            return;
-        }
-    }
-
     private async void camera_Clicked(object sender, EventArgs e)
     {
         try
@@ -452,13 +636,6 @@ public partial class VNewContagem : ContentPage
         }
     }
 
-    protected override bool OnBackButtonPressed()
-    {
-        Aviso();
-
-        return true;
-    }
-
     private void sbItens_TextChanged(object sender, TextChangedEventArgs e)
     {
         try
@@ -474,12 +651,12 @@ public partial class VNewContagem : ContentPage
 
             if (filtroItens.Count > 0)
             {
-                if (sbItens.Text.Length > 3)
+                if (sbItens.Text.Length > 2)
                 {
                     frItens.IsVisible = true;
                     _listaItem.ItemsSource = filtroItens;
                 }
-                else if (sbItens.Text.Length < 2)
+                else if (sbItens.Text.Length < 1)
                 {
                     frItens.IsVisible = false;
                     _listaItem.ItemsSource = lista_itens;
@@ -493,13 +670,15 @@ public partial class VNewContagem : ContentPage
         }
     }
 
-    private async void btnSalvar_Clicked(object sender, EventArgs e)
+    private async void btnFinalizar_Clicked(object sender, EventArgs e)
     {
         try
         {
-            LocalClass lista = (LocalClass)_listaLocal.SelectedItem;
+            LocalClass local = (LocalClass)_listaLocal.SelectedItem;
 
-            if (lista != null)
+            btnFinalizar.IsEnabled = false;
+
+            if (await DisplayAlert("AVISO", "Deseja finalizar a contagem?", "Sim", "Não"))
             {
                 stackPrincipal.IsVisible = false;
                 LoadingIndicator.IsVisible = true;
@@ -508,260 +687,29 @@ public partial class VNewContagem : ContentPage
                 if (!await aPIEnviaArquivos.SalvaImagens())
                 {
                     await DisplayAlert("Erro", "Erro ao salvar imagens!", "Ok");
-
-                    btnFinalizar.IsEnabled = true;
-                    btnSalvar.IsEnabled = true;
-
-                    stackPrincipal.IsVisible = true;
-                    LoadingIndicator.IsVisible = false;
-                    LoadingIndicator.IsRunning = false;
-
-                    return;
                 }
 
-                btnFinalizar.IsEnabled = false;
-                btnSalvar.IsEnabled = false;
-
-                if (card_itens.Count > 0 && lista != null)
+                if (!await apiEstoque.AtualizaContagemFull(AbasteceFullFinaliza(local)))
                 {
-                    List<EstoqueClass> listafinaliza = new List<EstoqueClass>();
-
-                    string grupos = string.Empty;
-                    string categoria = string.Empty;
-
-                    for (int i = 0; i < card_itens.Count; i++)
-                    {
-                        grupos += card_itens[i].IdGrupo.ToString() + ",";
-                        categoria += card_itens[i].IdCategoria.ToString() + ",";
-                    }
-
-                    grupos = grupos.TrimEnd(',');
-                    categoria = categoria.TrimEnd(',');
-
-                    foreach (var card in card_itens)
-                    {
-                        listafinaliza.Add(new EstoqueClass
-                        {
-                            IdLocal = lista.IdLocal,
-                            IdGrupo = grupos,
-                            DataAbre = DateTime.Now,
-                            DataFecha = null,
-                            UserAbre = InfoGlobal.usuario.ToUpper(),
-                            UserFecha = null,
-                            IdLista = _idLista,
-                            Finalizado = null,
-                            IdCategoriaLista = categoria
-                        });
-                    }
-
-                    List<EstoquePreClass> save = new List<EstoquePreClass>();
-
-                    foreach (var card in card_itens)
-                    {
-                        save.Add(new EstoquePreClass
-                        {
-                            Iditem = card.IdItem,
-                            Idgrupo = card.IdGrupo,
-                            Idcategoria = card.IdCategoria,
-                            Idsubgrupo = card.IdSubgrupo,
-                            Idlocal = lista.IdLocal,
-                            Usuario = InfoGlobal.usuario.ToUpper(),
-                            Quantidade = card.QuantidadeCont,
-                            Datasave = DateTime.Now,
-                            Sku = card.Sku,
-                            Idlista = _idLista,
-                            Finaliza = null
-                        });
-                    }
-
-                    if (await apiEstoque.CriaContagemFull(listafinaliza) && await apiEstoque.CriaContagemFast(save))
-                    {
-                        List<SelectEstoqueAtual> nova = await apiEstoque.HistoricoSelect(save[0].Idlista);
-                        if (await apiEstoque.AttHistorico(nova))
-                        {
-                            await DisplayAlert("Aviso", "Contagem salva com sucesso!", "Ok");
-
-                            card_itens.Clear();
-                            lista_local.Clear();
-
-                            _listaCard.ItemsSource = null;
-
-                            await CarregaItens();
-                            await CarregaLocal();
-                            await IdContagem();
-                        }
-                    }
+                    await DisplayAlert("Erro", "Erro ao finalizar contagem!", "Ok");
                 }
 
-                btnFinalizar.IsEnabled = true;
-                btnSalvar.IsEnabled = true;
+                if (!await AbasteceFinalizaItens())
+                {
+                    await DisplayAlert("Erro", "Erro ao finalizar contagem!", "Ok");
+                }
+                else
+                {
+                    await DisplayAlert("Aviso", "Contagem finalizada com sucesso!", "Ok");
+                    await Navigation.PushModalAsync(new VContagemAberta());
+                }
 
                 stackPrincipal.IsVisible = true;
                 LoadingIndicator.IsVisible = false;
                 LoadingIndicator.IsRunning = false;
             }
 
-            else
-            {
-                await Application.Current.MainPage.DisplayAlert("Aviso", "Selecione um local para prosseguir!", "OK");
-            }
-        }
-        catch (Exception ex)
-        {
-            await MetodoErroLog(ex);
-            return;
-        }
-    }
-
-    private async void btnFinalizar_Clicked(object sender, EventArgs e)
-    {
-        try
-        {
-            LocalClass lista = new LocalClass();
-            var item = _listaLocal.SelectedItem;
-            lista = (LocalClass)item;
-
-            btnFinalizar.IsEnabled = false;
-            btnSalvar.IsEnabled = false;
-
-            if (card_itens.Count > 0 && lista != null)
-            {
-                if (await DisplayAlert("AVISO", "Deseja finalizar a contagem?", "Sim", "Não"))
-                {
-                    stackPrincipal.IsVisible = false;
-                    LoadingIndicator.IsVisible = true;
-                    LoadingIndicator.IsRunning = true;
-
-
-
-                    if (!await aPIEnviaArquivos.SalvaImagens())
-                    {
-                        await DisplayAlert("Erro", "Erro ao salvar imagens!", "Ok");
-                        return;
-                    }
-
-                    if (index == 1)
-                    {
-                        var listaatual = await apiEstoque.ListaConstagensPorId(_idLista);
-                        List<EstoquePreClass> save = new List<EstoquePreClass>();
-
-                        for (int i = 0; i < card_itens.Count; i++)
-                        {
-                            if (!listaatual.Where(x => x.Idlista == _idLista && x.Iditem == card_itens[i].IdItem).Any())
-                            {
-                                save.Add(new EstoquePreClass
-                                {
-                                    Iditem = card_itens[i].IdItem,
-                                    Idgrupo = card_itens[i].IdGrupo,
-                                    Idcategoria = card_itens[i].IdCategoria,
-                                    Idsubgrupo = card_itens[i].IdSubgrupo,
-                                    Idlocal = lista.IdLocal,
-                                    Usuario = InfoGlobal.usuario.ToUpper(),
-                                    Quantidade = card_itens[i].QuantidadeCont,
-                                    Datasave = DateTime.Now,
-                                    Sku = card_itens[i].Sku,
-                                    Idlista = _idLista,
-                                    Finaliza = null
-                                });
-
-                                await apiEstoque.CriaContagemFast(save);
-                            }
-                        }
-
-                        if (await apiEstoque.AttContagem(_idLista, lista.IdLocal))
-                        {
-                            btnSalvar.IsEnabled = true;
-                            btnSalvar.IsVisible = true;
-                            index = 0;
-                            await DisplayAlert("Aviso", "Contagem finalizada com sucesso!", "Ok");
-
-                            card_itens.Clear();
-                            lista_local.Clear();
-
-                            _listaCard.ItemsSource = null;
-
-                            await CarregaItens();
-                            await CarregaLocal();
-                            await IdContagem();
-                        }
-                    }
-                    else
-                    {
-                        List<EstoqueClass> listafinaliza = new List<EstoqueClass>();
-
-                        string grupos = string.Empty;
-                        string categoria = string.Empty;
-
-                        for (int i = 0; i < card_itens.Count; i++)
-                        {
-                            grupos += card_itens[i].IdGrupo.ToString() + ",";
-                            categoria += card_itens[i].IdCategoria.ToString() + ",";
-                        }
-
-                        grupos = grupos.TrimEnd(',');
-                        categoria = categoria.TrimEnd(',');
-
-                        string usuario = InfoGlobal.usuario.ToUpper();
-
-                        foreach (var card in card_itens)
-                        {
-                            listafinaliza.Add(new EstoqueClass
-                            {
-                                IdLocal = lista.IdLocal,
-                                IdGrupo = grupos,
-                                DataAbre = DateTime.Now,
-                                DataFecha = DateTime.Now,
-                                UserAbre = usuario,
-                                UserFecha = usuario,
-                                IdLista = _idLista,
-                                Finalizado = "S",
-                                IdCategoriaLista = categoria
-                            });
-                        }
-
-                        List<EstoquePreClass> save = new List<EstoquePreClass>();
-
-                        foreach (var card in card_itens)
-                        {
-                            save.Add(new EstoquePreClass
-                            {
-                                Iditem = card.IdItem,
-                                Idgrupo = card.IdGrupo,
-                                Idcategoria = card.IdCategoria,
-                                Idsubgrupo = card.IdSubgrupo,
-                                Idlocal = lista.IdLocal,
-                                Usuario = usuario,
-                                Quantidade = card.QuantidadeCont,
-                                Datasave = DateTime.Now,
-                                Sku = card.Sku,
-                                Idlista = _idLista,
-                                Finaliza = "S"
-                            });
-                        }
-
-                        if (await apiEstoque.CriaContagemFull(listafinaliza) && await apiEstoque.CriaContagemFast(save))
-                        {
-                            await DisplayAlert("Aviso", "Contagem finalizada com sucesso!", "Ok");
-
-                            card_itens.Clear();
-                            lista_local.Clear();
-
-                            _listaCard.ItemsSource = null;
-
-                            await CarregaItens();
-                            await CarregaLocal();
-                            await IdContagem();
-                        }
-                    }
-
-                    stackPrincipal.IsVisible = true;
-                    LoadingIndicator.IsVisible = false;
-                    LoadingIndicator.IsRunning = false;
-                }
-            }
-
             btnFinalizar.IsEnabled = true;
-            btnSalvar.IsEnabled = true;
         }
         catch (Exception ex)
         {
@@ -770,7 +718,7 @@ public partial class VNewContagem : ContentPage
         }
     }
 
-    private void _listaItem_ItemSelected(object sender, SelectedItemChangedEventArgs e)
+    private async void _listaItem_ItemSelected(object sender, SelectedItemChangedEventArgs e)
     {
         try
         {
@@ -781,55 +729,178 @@ public partial class VNewContagem : ContentPage
             sbItens.Text = lista.Descricao;
             frItens.IsVisible = false;
 
-            bool existe = card_itens.Where(x => x.Descricao == lista.Descricao).Any();
+            List<EstoquePreClass> pre = await VerificaIdLista();
+
+            List<ItensClass> itemAtt = await apiItens.ListaItensId(lista.IdItem);
+
+            bool existe = pre.Where(x => x.Iditem == lista.IdItem).Any();
 
             if (!existe)
             {
-                CriaCardItem(lista);
+                if (itemAtt[0].Volume <= 0.00M)
+                {
+                    await DisplayAlert("Aviso", "Este item está com o volume zerado. Por favor, atualize-o para adicioná-lo à contagem.", "Ok");
+                    sbItens.Text = string.Empty;
+                    return;
+                }
+                else
+                {
+                    ItensClass novaClassIten = AtuializaPropItens(lista, itemAtt);
+
+                    pupQuantidade.IsVisible = true;
+
+                    if (itemAtt[0].Unidade.ToString().ToLower() == "un")
+                    {
+                        lblMedidaPup.IsVisible = false;
+                        quantidadeEntryMed.IsVisible = false;
+                    }
+                    else
+                    {
+                        lblMedidaPup.IsVisible = true;
+                        quantidadeEntryMed.IsVisible = true;
+                        lblMedidaPup.Text = itemAtt[0].Unidade.ToString().ToLower();
+                    }
+
+                    quantidadeEntry.Focus();
+
+                    // Aguarda até que pupQuantidade.IsVisible seja false
+                    while (pupQuantidade.IsVisible)
+                    {
+                        // Espera um curto período de tempo para evitar consumo excessivo de CPU
+                        await Task.Delay(100);
+                    }
+
+                    int quantidadeUn = 0;
+
+                    if (!string.IsNullOrEmpty(quantidadeEntry.Text))
+                    {
+                        quantidadeUn = Convert.ToInt32(quantidadeEntry.Text);
+
+                        if (quantidadeUn < 0)
+                        {
+                            quantidadeUn = 0;
+                        }
+                    }
+
+                    double quantidadeMed = 0;
+
+                    if (!string.IsNullOrEmpty(quantidadeEntryMed.Text))
+                    {
+                        quantidadeMed = Convert.ToDouble(quantidadeEntryMed.Text.Replace('.', ','));
+
+                        if (quantidadeMed < 0)
+                        {
+                            quantidadeMed = 0;
+                        }
+                    }
+
+                    novaClassIten.QuantidadeCont = quantidadeUn.ToString();
+                    novaClassIten.QuantidadeMed = quantidadeMed.ToString();
+                    novaClassIten.QuantidadeUn = quantidadeUn.ToString();
+
+                    EstPrevistoClass estprev = await apiItens.EstoquePrevisto(novaClassIten.Sku);
+
+                    CriaCardItem(novaClassIten, estprev);
+
+                    quantidadeEntry.Text = string.Empty;
+                    quantidadeEntryMed.Text = string.Empty;
+
+                    quantidadeEntry.Unfocus();
+                    quantidadeEntryMed.Unfocus();
+                }
+            }
+            else
+            {
+                await DisplayAlert("Aviso", "Este item já está presente na contagem atual!", "Ok");
             }
 
             sbItens.Text = string.Empty;
         }
         catch (Exception ex)
         {
-            MetodoErroLog(ex);
+            await MetodoErroLog(ex);
             return;
         }
     }
 
-    private void Entry_Unfocused(object sender, FocusEventArgs e)
+    private void OKButton_Clicked(object sender, EventArgs e)
     {
-        try
-        {
-            // Crie uma view invisível e dê o foco a ela para evitar que o teclado abra
-            var dummyView = new Entry();
-            dummyView.IsVisible = false;
-            dummyView.IsReadOnly = false;
-            dummyView.Focus();
-        }
-        catch (Exception ex)
-        {
-            MetodoErroLog(ex);
-            return;
-        }
+        pupQuantidade.IsVisible = false;
     }
 
-    protected override void OnAppearing()
+    private async void SwipeItem_Clicked(object sender, EventArgs e)
     {
-        try
+        // Obtenha o item associado ao SwipeItem clicado
+        if (sender is SwipeItem swipeItem && swipeItem.CommandParameter is ItensClass item)
         {
-            App.Current.MainPage.SetValue(Shell.FlyoutBehaviorProperty, FlyoutBehavior.Flyout);
-            NavigationPage.SetHasNavigationBar(this, false);
-            InfoGlobal.isMenuOpen = true;
+            try
+            {
+                card_itens.Remove(item);
+                lista_itens.Remove(item);
 
-            base.OnAppearing();
-        }
-        catch (Exception ex)
-        {
-            MetodoErroLog(ex);
-            return;
+                // Atualize a fonte de dados da sua CollectionView após a exclusão
+                _listaCard.ItemsSource = card_itens.ToList();
+
+                List<EstoquePreClass> listaatual = await apiEstoque.ListaConstagensPorId(_idLista);
+
+                if (listaatual.Count > 0)
+                {
+                    int indexToRemove = listaatual.FindIndex(x => x.Sku.Contains(item.Sku));
+
+                    if (indexToRemove != -1)
+                    {
+                        int idLista = listaatual[indexToRemove].Id;
+                        string sku = listaatual[indexToRemove].Sku;
+
+                        await apiEstoque.DeletarContagemFast(idLista, sku);
+
+                        listaatual.RemoveAt(indexToRemove);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                await MetodoErroLog(ex);
+                return;
+            }
         }
     }
 
+    private async void OnFrameTapped(object sender, TappedEventArgs e)
+    {
+        var frameView = sender as Frame;
+        ItensClass selecionado = frameView?.BindingContext as ItensClass;
+
+        if (selecionado != null)
+        {
+            pupQuantidade.IsVisible = true;
+
+            lblMedidaPup.Text = selecionado.Unidade.ToString().ToLower();
+
+            quantidadeEntry.Text = selecionado.QuantidadeUn;
+            quantidadeEntryMed.Text = selecionado.QuantidadeMed;
+
+            // Aguarda até que pupQuantidade.IsVisible seja false
+            while (pupQuantidade.IsVisible)
+            {
+                // Espera um curto período de tempo para evitar consumo excessivo de CPU
+                await Task.Delay(100);
+            }
+
+            selecionado.QuantidadeCont = CalculadoraVolume.CalculaVolumePopup(quantidadeEntry.Text, quantidadeEntryMed.Text, selecionado.Volume.ToString());
+            selecionado.QuantidadeUn = quantidadeEntry.Text;
+            selecionado.QtdFinalIten = CalculadoraVolume.QuantidadeFinalIten(quantidadeEntryMed.Text, quantidadeEntry.Text, selecionado.Volume.ToString());
+
+            int id = await apiEstoque.ListaIdPreItens(selecionado.IdItem, _idLista);
+
+            EstoquePreClass preNew = new EstoquePreClass();
+            preNew.Id = id;
+            preNew.Quantidade = Convert.ToDecimal(selecionado.QtdFinalIten);
+            await apiEstoque.AtualizaItensContPre(preNew);
+
+            quantidadeEntry.Text = string.Empty;
+            quantidadeEntryMed.Text = string.Empty;
+        }
+    }
     #endregion
 }

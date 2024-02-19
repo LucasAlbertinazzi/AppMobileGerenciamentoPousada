@@ -1,11 +1,12 @@
-using AppPousadaPeNaTerra.Classes.API.Auditoria;
-using AppPousadaPeNaTerra.Classes.API.Principal;
-using AppPousadaPeNaTerra.Classes.Globais;
-using AppPousadaPeNaTerra.Model.Auditoria;
-using AppPousadaPeNaTerra.Services.Auditoria;
-using AppPousadaPeNaTerra.Services.Principal;
+using AppGerenciamento.Classes.API.Auditoria;
+using AppGerenciamento.Classes.API.Principal;
+using AppGerenciamento.Classes.Globais;
+using AppGerenciamento.Model.Auditoria;
+using AppGerenciamento.Services.Auditoria;
+using AppGerenciamento.Services.Principal;
+using AppGerenciamento.Suporte;
 
-namespace AppPousadaPeNaTerra.Views;
+namespace AppGerenciamento.Views;
 
 public partial class VContagemAberta : ContentPage
 {
@@ -13,6 +14,7 @@ public partial class VContagemAberta : ContentPage
     APIEstoqueAud apiEstoque = new();
     APILocalAud apiLocal = new();
     APIErroLog error = new();
+    ExceptionHandlingService _exceptionService = new();
 
     List<ContagemAbertaModel> card_abertas = new List<ContagemAbertaModel>();
     #endregion
@@ -66,6 +68,7 @@ public partial class VContagemAberta : ContentPage
         };
 
         await error.LogErro(erroLog);
+        await _exceptionService.ReportError(ex);
     }
 
     private async Task CarregaContagem()
@@ -80,7 +83,7 @@ public partial class VContagemAberta : ContentPage
             List<EstoqueClass> lista = await apiEstoque.ContagensAbertas();
             card_abertas = new List<ContagemAbertaModel>();
 
-            if(lista != null && lista.Count > 0) 
+            if (lista != null && lista.Count > 0)
             {
                 avisoNoList.IsVisible = false;
 
@@ -117,6 +120,17 @@ public partial class VContagemAberta : ContentPage
         }
     }
 
+    protected override bool OnBackButtonPressed()
+    {
+        Especifica();
+        return true; // Retornar true para indicar que o evento foi tratado
+    }
+
+    private async void Especifica()
+    {
+        // Ao clicar no botão, navegar de volta para a página inicial
+        await Navigation.PushModalAsync(new VMenuPrincipal());
+    }
     #endregion
 
     #region 4- EVENTOS DE CONTROLE
@@ -170,7 +184,7 @@ public partial class VContagemAberta : ContentPage
             }
 
             if (aviso) { await CarregaContagem(); };
-            
+
         }
         catch (Exception ex)
         {

@@ -1,16 +1,18 @@
-﻿using AppPousadaPeNaTerra.Classes.API.Auditoria;
-using AppPousadaPeNaTerra.Classes.API.Principal;
-using AppPousadaPeNaTerra.Classes.Globais;
-using AppPousadaPeNaTerra.Services.Principal;
+﻿using AppGerenciamento.Classes.API.Auditoria;
+using AppGerenciamento.Classes.API.Principal;
+using AppGerenciamento.Classes.Globais;
+using AppGerenciamento.Services.Principal;
+using AppGerenciamento.Suporte;
 using Newtonsoft.Json;
 using System.Text;
 
-namespace AppPousadaPeNaTerra.Services.Auditoria
+namespace AppGerenciamento.Services.Auditoria
 {
     public class APIEstoqueAud
     {
         #region 1- LOG
         APIErroLog error = new();
+        ExceptionHandlingService _exceptionService = new();
 
         private async Task MetodoErroLog(Exception ex)
         {
@@ -26,6 +28,8 @@ namespace AppPousadaPeNaTerra.Services.Auditoria
             };
 
             await error.LogErro(erroLog);
+            await _exceptionService.ReportError(ex);
+
         }
         #endregion
 
@@ -34,10 +38,70 @@ namespace AppPousadaPeNaTerra.Services.Auditoria
 
         public APIEstoqueAud()
         {
-            _httpClient = new HttpClient();
+            _httpClient = new HttpClient() { Timeout = new TimeSpan(0, 0, 20) };
         }
 
-        public async Task<bool> CriaContagemFull(List<EstoqueClass> lista)
+        public async Task<bool> AtualizaContagemFull(EstoqueClass lista)
+        {
+            try
+            {
+                string uri = InfoGlobal.apiEstoque + "/Estoque/atualiza-contagem";
+
+                using (var cliente = new HttpClient())
+                {
+                    var contagem = new EstoqueClass();
+                    contagem.IdCategoria = lista.IdCategoria;
+                    contagem.IdGrupo = lista.IdGrupo;
+                    contagem.DataFecha = lista.DataFecha;
+                    contagem.UserFecha = lista.UserFecha;
+                    contagem.IdLocal = lista.IdLocal;
+                    contagem.Finalizado = lista.Finalizado;
+                    contagem.IdCategoriaLista = lista.IdCategoriaLista;
+                    contagem.IdLista = lista.IdLista;
+
+                    string json = JsonConvert.SerializeObject(contagem);
+                    var content = new StringContent(json, Encoding.UTF8, "application/json");
+                    var resposta = await cliente.PostAsync(uri, content);
+
+                    if (resposta.IsSuccessStatusCode) { return true; } else { return false; }
+                }
+            }
+
+            catch (Exception ex)
+            {
+                await MetodoErroLog(ex);
+                return false;
+            }
+        }
+
+        public async Task<bool> FinalizaItensContagemPre(int id)
+        {
+            try
+            {
+                string uri = InfoGlobal.apiEstoque + "/Estoque/atualiza-pre-contagem-finaliza";
+
+                using (var cliente = new HttpClient())
+                {
+                    var contagem = new EstoquePreClass();
+                    contagem.Idlista = id;
+                    contagem.Finaliza = "S";
+
+                    string json = JsonConvert.SerializeObject(contagem);
+                    var content = new StringContent(json, Encoding.UTF8, "application/json");
+                    var resposta = await cliente.PostAsync(uri, content);
+
+                    if (resposta.IsSuccessStatusCode) { return true; } else { return false; }
+                }
+            }
+
+            catch (Exception ex)
+            {
+                await MetodoErroLog(ex);
+                return false;
+            }
+        }
+
+        public async Task<bool> CriaPreviaContagemFull(EstoqueClass lista)
         {
             try
             {
@@ -46,16 +110,16 @@ namespace AppPousadaPeNaTerra.Services.Auditoria
                 using (var cliente = new HttpClient())
                 {
                     var contagem = new EstoqueClass();
-                    contagem.IdCategoria = lista[0].IdCategoria;
-                    contagem.IdLocal = lista[0].IdLocal;
-                    contagem.IdGrupo = lista[0].IdGrupo;
-                    contagem.DataAbre = lista[0].DataAbre;
-                    contagem.UserAbre = lista[0].UserAbre;
-                    contagem.UserFecha = lista[0].UserFecha;
-                    contagem.DataFecha = lista[0].DataFecha;
-                    contagem.IdLista = lista[0].IdLista;
-                    contagem.Finalizado = lista[0].Finalizado;
-                    contagem.IdCategoriaLista = lista[0].IdCategoriaLista;
+                    contagem.IdCategoria = lista.IdCategoria;
+                    contagem.IdLocal = lista.IdLocal;
+                    contagem.IdGrupo = lista.IdGrupo;
+                    contagem.DataAbre = lista.DataAbre;
+                    contagem.UserAbre = lista.UserAbre;
+                    contagem.UserFecha = lista.UserFecha;
+                    contagem.DataFecha = lista.DataFecha;
+                    contagem.IdLista = lista.IdLista;
+                    contagem.Finalizado = lista.Finalizado;
+                    contagem.IdCategoriaLista = lista.IdCategoriaLista;
 
                     string json = JsonConvert.SerializeObject(contagem);
                     var content = new StringContent(json, Encoding.UTF8, "application/json");
@@ -120,6 +184,123 @@ namespace AppPousadaPeNaTerra.Services.Auditoria
             {
                 await MetodoErroLog(ex);
                 return false;
+            }
+        }
+
+        public async Task<bool> AtualizaItensContPre(EstoquePreClass lista)
+        {
+            try
+            {
+                string uri = InfoGlobal.apiEstoque + "/Estoque/att-itens-cont-pre";
+
+                using (var cliente = new HttpClient())
+                {
+                    var contagem = new EstoquePreClass();
+                    contagem.Id = lista.Id;
+                    contagem.Quantidade = lista.Quantidade;
+
+                    string json = JsonConvert.SerializeObject(contagem);
+                    var content = new StringContent(json, Encoding.UTF8, "application/json");
+                    var resposta = await cliente.PostAsync(uri, content);
+
+                    if (resposta.IsSuccessStatusCode)
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            catch (Exception ex)
+            {
+                await MetodoErroLog(ex);
+                return false;
+            }
+        }
+
+        public async Task<bool> AdicionaItensContPre(EstoquePreClass lista)
+        {
+            try
+            {
+                string uri = InfoGlobal.apiEstoque + "/Estoque/adiciona-itens-cont-pre";
+
+                using (var cliente = new HttpClient())
+                {
+                    var contagem = new EstoquePreClass();
+                    contagem.Iditem = lista.Iditem;
+                    contagem.Idgrupo = lista.Idgrupo;
+                    contagem.Idcategoria = lista.Idcategoria;
+                    contagem.Idsubgrupo = lista.Idsubgrupo;
+                    contagem.Sku = lista.Sku;
+                    contagem.Idlocal = lista.Idlocal;
+                    contagem.Usuario = lista.Usuario;
+                    contagem.Quantidade = lista.Quantidade;
+                    contagem.Datasave = lista.Datasave;
+                    contagem.Idlista = lista.Idlista;
+                    contagem.Finaliza = lista.Finaliza;
+                    contagem.EstoqueAtual = lista.EstoqueAtual;
+
+                    string json = JsonConvert.SerializeObject(contagem);
+                    var content = new StringContent(json, Encoding.UTF8, "application/json");
+                    var resposta = await cliente.PostAsync(uri, content);
+
+                    if (resposta.IsSuccessStatusCode)
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            catch (Exception ex)
+            {
+                await MetodoErroLog(ex);
+                return false;
+            }
+        }
+
+        public async Task<int> ListaIdPreItens(int iditem, int idlista)
+        {
+            try
+            {
+                string uri = InfoGlobal.apiEstoque + "/Estoque/lista-id-pre-iten?iditem=" + iditem + "&idlista=" + idlista;
+
+                using (var cliente = new HttpClient())
+                {
+                    var resposta = await cliente.GetStringAsync(uri);
+                    var retorno = JsonConvert.DeserializeObject<int>(resposta);
+                    return retorno;
+                }
+            }
+            catch (Exception ex)
+            {
+                await MetodoErroLog(ex);
+                return 0;
+            }
+        }
+
+        public async Task DeletarContagemFast(int idLista, string sku)
+        {
+            try
+            {
+                string uri = $"{InfoGlobal.apiEstoque}/Estoque/deletar-item-fast?idLista={idLista}&sku={sku}";
+
+                using (var cliente = new HttpClient())
+                {
+                    var resposta = await cliente.DeleteAsync(uri);
+                    resposta.EnsureSuccessStatusCode(); // Lança uma exceção se a resposta não for bem-sucedida (status code 2xx)
+                }
+            }
+            catch (HttpRequestException ex)
+            {
+                await MetodoErroLog(ex);
+                return; // Releva a exceção para o chamador lidar com ela
             }
         }
 
@@ -349,7 +530,7 @@ namespace AppPousadaPeNaTerra.Services.Auditoria
                     {
                         estoque.Add(new SelectEstoqueAtual
                         {
-                            EstoqueAtual = item.EstoqueAtual,
+                            Atual = item.Atual,
                             IdItem = item.IdItem,
                             IdLista = item.IdLista,
                             Sku = item.Sku

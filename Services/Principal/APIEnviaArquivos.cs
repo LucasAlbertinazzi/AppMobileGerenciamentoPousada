@@ -1,15 +1,16 @@
-﻿using AppPousadaPeNaTerra.Classes.API.Principal;
-using AppPousadaPeNaTerra.Classes.Globais;
-using AppPousadaPeNaTerra.Suporte;
+﻿using AppGerenciamento.Classes.API.Principal;
+using AppGerenciamento.Classes.Globais;
+using AppGerenciamento.Suporte;
 using Newtonsoft.Json;
 
-namespace AppPousadaPeNaTerra.Services.Principal
+namespace AppGerenciamento.Services.Principal
 {
     public class APIEnviaArquivos
     {
 
         #region 1- LOG
         APIErroLog error = new();
+        ExceptionHandlingService _exceptionService = new();
 
         private async Task MetodoErroLog(Exception ex)
         {
@@ -25,7 +26,9 @@ namespace AppPousadaPeNaTerra.Services.Principal
             };
 
             await error.LogErro(erroLog);
-        }
+            await _exceptionService.ReportError(ex);
+            
+    }
         #endregion
 
         #region 2- API

@@ -1,14 +1,16 @@
-﻿using AppPousadaPeNaTerra.Classes.API.Principal;
-using AppPousadaPeNaTerra.Classes.Globais;
-using AppPousadaPeNaTerra.Services.Principal;
-using AppPousadaPeNaTerra.Views;
+﻿using AppGerenciamento.Classes.API.Principal;
+using AppGerenciamento.Classes.Globais;
+using AppGerenciamento.Services.Principal;
+using AppGerenciamento.Suporte;
+using AppGerenciamento.Views;
 
-namespace AppPousadaPeNaTerra.ViewModel.Principal
+namespace AppGerenciamento.ViewModel.Principal
 {
     public class MenuPrincipalVModel
     {
         #region 1- VARIAVEIS
         APIErroLog error = new();
+        ExceptionHandlingService _exceptionService = new();
 
         // Definição do delegate
         public delegate void ExecutaMetodo();
@@ -33,6 +35,7 @@ namespace AppPousadaPeNaTerra.ViewModel.Principal
             };
 
             await error.LogErro(erroLog);
+            await _exceptionService.ReportError(ex);
         }
 
         public async Task RedirecionaFuncao(string nomeMetodo)

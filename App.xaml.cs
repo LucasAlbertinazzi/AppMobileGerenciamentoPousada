@@ -1,25 +1,37 @@
-﻿using AppPousadaPeNaTerra.Classes.API.Principal;
-using AppPousadaPeNaTerra.Services.Principal;
+﻿using AppGerenciamento.Classes.API.Principal;
+using AppGerenciamento.Classes.Globais;
+using AppGerenciamento.Services.Principal;
+using AppGerenciamento.Suporte;
+using System.Diagnostics;
 
-namespace AppPousadaPeNaTerra;
+namespace AppGerenciamento;
 
 public partial class App : Application
 {
     #region 1- VARIAVEIS
     APIErroLog error = new();
-
+    APIVersaoApp api_versao = new();
+    ExceptionHandlingService _exceptionService = new();
     #endregion
 
     #region 2 - METODOS CONSTRUTORES
     public App()
     {
         InitializeComponent();
-
+        InfoGlobal.AjustarUrlsParaDebug();
         MainPage = new AppShell();
     }
+
+    protected async override void OnStart()
+    {
+        base.OnStart();
+        await MonitorAppActivities();
+    }
+
     #endregion
 
     #region 3- METODOS
+
     private async Task MetodoErroLog(Exception ex)
     {
         var erroLog = new ErrorLogClass
@@ -34,13 +46,7 @@ public partial class App : Application
         };
 
         await error.LogErro(erroLog);
-    }
-
-    protected override void OnStart()
-    {
-        base.OnStart();
-
-        VerificarConexaoInternet();
+        await _exceptionService.ReportError(ex);
     }
 
     public async Task VerificarConexaoInternet()
@@ -49,17 +55,28 @@ public partial class App : Application
         {
             while (true)
             {
-                // Verifica o estado da conectividade
                 var current = Connectivity.NetworkAccess;
 
-                if (current != NetworkAccess.Internet)
+                if (current == NetworkAccess.Internet)
                 {
-                    // Não há conexão com a internet, exiba uma mensagem ao usuário
-                    await Application.Current.MainPage.DisplayAlert("Sem internet", "Reconecte a internet para continuar usando o APP", "OK");
+                    // Mede a velocidade da internet
+                    var speed = await MeasureInternetSpeed();
+
+                    if (speed < 0.25)
+                    {
+                        await MostrarAlertaConexaoRuim();
+                    }
+                    else
+                    {
+                        await VerificaVersaoAPP();
+                    }
+                }
+                else
+                {
+                    await MostrarAlertaSemInternet();
                 }
 
-                // Aguarda um intervalo de tempo antes de verificar novamente
-                await Task.Delay(5000); // Verificar a cada 5 segundos (você pode ajustar o intervalo conforme necessário)
+                await Task.Delay(1000);
             }
         }
         catch (Exception ex)
@@ -68,9 +85,78 @@ public partial class App : Application
             return;
         }
     }
+
+    private async Task MostrarAlertaConexaoRuim()
+    {
+        await Application.Current.MainPage.DisplayAlert("Conexão Ruim", "Sua conexão de internet está lenta. Conecte-se a uma rede mais rápida. Suas informações já preenchidas podem ser solicitadas novamente.", "OK");
+    }
+
+    private async Task MostrarAlertaSemInternet()
+    {
+        await Application.Current.MainPage.DisplayAlert("Sem Internet", "Reconecte a internet para continuar usando o aplicativo.", "OK");
+    }
+
+    public async Task<double> MeasureInternetSpeed()
+    {
+        try
+        {
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+            var client = new HttpClient();
+            var result = await client.GetAsync("https://github.com/sivel/speedtest-cli/raw/master/speedtest.py");
+            stopwatch.Stop();
+
+            if (result.IsSuccessStatusCode)
+            {
+                var bytesDownloaded = await result.Content.ReadAsByteArrayAsync();
+                var timeTaken = stopwatch.Elapsed.TotalSeconds;
+                var speed = (bytesDownloaded.Length / timeTaken) * 8 / 1024 / 1024; // Mbps
+                return speed;
+            }
+            else
+            {
+                return 0;
+            }
+        }
+        catch (Exception ex)
+        {
+            await MetodoErroLog(ex);
+            return 0;
+        }
+    }
+
+    private async Task VerificaVersaoAPP()
+    {
+        try
+        {
+            if (!await api_versao.VerificarVersaoInstalada())
+            {
+                if (string.IsNullOrEmpty(InfoGlobal.LastVersao))
+                {
+                    await Application.Current.MainPage.DisplayAlert("Atualização Disponível", "Uma nova versão do aplicativo está disponível. Por favor, atualize para continuar.", "OK");
+                    await Launcher.OpenAsync(InfoGlobal.apk);
+                    await Task.Delay(60000);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await MetodoErroLog(ex);
+            return;
+        }
+    }
+
+    private async Task MonitorAppActivities()
+    {
+        while (true)
+        {
+            await VerificarConexaoInternet();
+            await Task.Delay(1000);
+        }
+    }
     #endregion
 
     #region 4- EVENTOS DE CONTROLE
-
+    
     #endregion
 }

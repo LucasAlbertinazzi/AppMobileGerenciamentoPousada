@@ -1,4 +1,4 @@
-﻿namespace AppPousadaPeNaTerra.Model.Auditoria
+﻿namespace AppGerenciamento.Model.Auditoria
 {
     public class ContagemAbertaModel
     {

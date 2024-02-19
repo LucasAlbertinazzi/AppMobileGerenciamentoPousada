@@ -1,7 +1,7 @@
 ﻿using Camera.MAUI;
 using Microsoft.Extensions.Logging;
 
-namespace AppPousadaPeNaTerra;
+namespace AppGerenciamento;
 
 public static class MauiProgram
 {

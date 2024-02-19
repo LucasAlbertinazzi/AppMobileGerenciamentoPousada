@@ -1,7 +1,7 @@
 ﻿using ObjCRuntime;
 using UIKit;
 
-namespace AppPousadaPeNaTerra;
+namespace AppGerenciamento;
 
 public class Program
 {

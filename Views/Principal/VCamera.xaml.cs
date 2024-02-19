@@ -1,9 +1,9 @@
-using AppPousadaPeNaTerra.Classes.API.Principal;
-using AppPousadaPeNaTerra.Classes.Globais;
-using AppPousadaPeNaTerra.Services.Principal;
-using AppPousadaPeNaTerra.Suporte;
+using AppGerenciamento.Classes.API.Principal;
+using AppGerenciamento.Classes.Globais;
+using AppGerenciamento.Services.Principal;
+using AppGerenciamento.Suporte;
 
-namespace AppPousadaPeNaTerra.Views.Principal;
+namespace AppGerenciamento.Views.Principal;
 
 public partial class VCamera : ContentPage
 {
@@ -25,6 +25,7 @@ public partial class VCamera : ContentPage
 
     APIEnviaArquivos apiEnviaArquivos = new APIEnviaArquivos();
     APIErroLog error = new();
+    ExceptionHandlingService _exceptionService = new();
     #endregion
 
     #region 3- CLASSES
@@ -77,6 +78,7 @@ public partial class VCamera : ContentPage
         };
 
         await error.LogErro(erroLog);
+        await _exceptionService.ReportError(ex);
     }
 
     private async Task CarregaGaleria()
@@ -115,7 +117,7 @@ public partial class VCamera : ContentPage
             await MetodoErroLog(ex);
             return;
         }
-        
+
     }
 
     private void MostraGaleria()

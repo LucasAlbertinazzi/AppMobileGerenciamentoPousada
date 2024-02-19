@@ -1,7 +1,7 @@
 ﻿using Android.App;
 using Android.Runtime;
 
-namespace AppPousadaPeNaTerra;
+namespace AppGerenciamento;
 
 [Application]
 public class MainApplication : MauiApplication

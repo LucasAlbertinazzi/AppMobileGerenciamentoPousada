@@ -1,4 +1,4 @@
-namespace AppPousadaPeNaTerra.Views;
+namespace AppGerenciamento.Views;
 
 public partial class VContagens : ContentPage
 {

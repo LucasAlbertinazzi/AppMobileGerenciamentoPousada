@@ -1,22 +1,25 @@
-using AppPousadaPeNaTerra.Classes.API.Principal;
-using AppPousadaPeNaTerra.Classes.Globais;
-using AppPousadaPeNaTerra.Services.Principal;
-using System.Diagnostics;
+using AppGerenciamento.Classes.API.Principal;
+using AppGerenciamento.Classes.Globais;
+using AppGerenciamento.Services.Principal;
+using AppGerenciamento.Suporte;
 
-namespace AppPousadaPeNaTerra.Views;
+namespace AppGerenciamento.Views;
 
 public partial class VLogin : ContentPage
 {
     #region 1- VARIAVEIS
     APIUser aPIUser = new APIUser();
-    APIVersaoApp versaoApp = new APIVersaoApp();
     APIErroLog error = new();
+    ExceptionHandlingService _exceptionService = new();
     #endregion
 
     #region 2 - METODOS CONSTRUTORES
     public VLogin()
     {
         InitializeComponent();
+
+        AppDomain.CurrentDomain.UnhandledException += CurrentDomainOnUnhandledException;
+        TaskScheduler.UnobservedTaskException += TaskSchedulerOnUnobservedTaskException;
     }
 
     private async void ContentPage_Loaded(object sender, EventArgs e)
@@ -49,21 +52,22 @@ public partial class VLogin : ContentPage
         };
 
         await error.LogErro(erroLog);
+        await _exceptionService.ReportError(ex);
     }
 
-    private void MetodosIniciais()
+    private async void MetodosIniciais()
     {
         try
         {
             //Redimensionamento de logo
-            logoSize.HeightRequest = GetIconSizeForDevice();
+            logoSize.HeightRequest = await GetIconSizeForDevice();
 
             //Exibe label com versão do APP
-            ExibeVersao();
+            await ExibeVersao();
         }
         catch (Exception ex)
         {
-            MetodoErroLog(ex);
+            await MetodoErroLog(ex);
             return;
         }
 
@@ -106,7 +110,7 @@ public partial class VLogin : ContentPage
         }
     }
 
-    private bool CheckSavedCredentials()
+    private async Task<bool> CheckSavedCredentials()
     {
         try
         {
@@ -115,13 +119,13 @@ public partial class VLogin : ContentPage
         }
         catch (Exception ex)
         {
-            MetodoErroLog(ex);
+            await MetodoErroLog(ex);
             return false;
         }
 
     }
 
-    private double GetIconSizeForDevice()
+    private async Task<double> GetIconSizeForDevice()
     {
         try
         {
@@ -134,22 +138,22 @@ public partial class VLogin : ContentPage
         }
         catch (Exception ex)
         {
-            MetodoErroLog(ex);
+            await MetodoErroLog(ex);
             return 0;
         }
 
     }
 
-    private void ExibeVersao()
+    private async Task ExibeVersao()
     {
         try
         {
-            lblInfoDev.Text = "Pousada Pé na Terra @Todos os direitos reservados";
+            lblInfoDev.Text = "L. Albertinazzi Desenvolvimento @Todos os direitos reservados";
             lblInfoDevVersao.Text = $"Versão {AppInfo.Version}";
         }
         catch (Exception ex)
         {
-            MetodoErroLog(ex);
+            await MetodoErroLog(ex);
             return;
         }
 
@@ -163,10 +167,8 @@ public partial class VLogin : ContentPage
             App.Current.MainPage.SetValue(Shell.FlyoutBehaviorProperty, FlyoutBehavior.Disabled);
             ShowPasswordButton.Source = "eyeclose.svg";
 
-            await VerificaVersao();
-
             // Verifica se as credenciais estão salvas
-            if (CheckSavedCredentials())
+            if (await CheckSavedCredentials())
             {
                 // Autentica automaticamente
                 await AuthenticateSavedCredentials();
@@ -179,36 +181,19 @@ public partial class VLogin : ContentPage
         }
     }
 
-    private async Task VerificaVersao()
-    {
-        try
-        {
-            if (!await versaoApp.VerificarVersaoInstalada())
-            {
-                if (Debugger.IsAttached)
-                {
-                    await versaoApp.SalvaVersao();
-                }
-                else
-                {
-                    // Exibir mensagem de atualização
-                    await Application.Current.MainPage.DisplayAlert("Atualização Disponível", "Uma nova versão do aplicativo está disponível. Por favor, atualize para continuar.", "OK");
-
-                    // Abrir a URL de atualização
-                    await Launcher.OpenAsync("http://192.168.85.3:25434/");
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            await MetodoErroLog(ex);
-            return;
-        }
-
-    }
     #endregion
 
     #region 4- EVENTOS DE CONTROLE
+    private async void CurrentDomainOnUnhandledException(object sender, UnhandledExceptionEventArgs e)
+    {
+        await _exceptionService.ReportError(e.ExceptionObject as Exception);
+    }
+
+    private async void TaskSchedulerOnUnobservedTaskException(object sender, UnobservedTaskExceptionEventArgs e)
+    {
+        await _exceptionService.ReportError(e.Exception);
+    }
+
     private void OnShowPasswordButtonClicked(object sender, EventArgs e)
     {
         try

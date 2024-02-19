@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage
-    x:Class="AppPousadaPeNaTerra.Views.VNewContagem"
+    x:Class="AppGerenciamento.Views.VNewContagem"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     Title="VNewContagem"
@@ -14,6 +14,8 @@
             IsVisible="False"
             VerticalOptions="CenterAndExpand"
             Color="White" />
+
+        <!--  Conteúdo da tela de fundo  -->
         <StackLayout x:Name="stackPrincipal" Padding="10">
 
             <!--#region Linha 0 - Selecionar o local-->
@@ -82,7 +84,10 @@
                             <ListView.ItemTemplate>
                                 <DataTemplate>
                                     <ViewCell>
-                                        <Label Style="{StaticResource labelCard}" Text="{Binding Descricao}" />
+                                        <Label
+                                            HeightRequest="52"
+                                            Style="{StaticResource labelCard}"
+                                            Text="{Binding Descricao}" />
                                     </ViewCell>
                                 </DataTemplate>
                             </ListView.ItemTemplate>
@@ -107,30 +112,117 @@
                             <CollectionView x:Name="_listaCard" VerticalScrollBarVisibility="Default">
                                 <CollectionView.ItemTemplate>
                                     <DataTemplate>
-                                        <Frame Style="{StaticResource frameItem}">
-                                            <StackLayout Orientation="Horizontal">
-                                                <Button
-                                                    x:Name="camera"
-                                                    Clicked="camera_Clicked"
-                                                    CornerRadius="6"
-                                                    MaximumWidthRequest="70"
-                                                    Style="{StaticResource btnCamera}"
-                                                    Text="{Binding IdItem}" />
-                                                <Label
-                                                    HorizontalOptions="StartAndExpand"
-                                                    Style="{StaticResource labelCard}"
-                                                    Text="{Binding Descricao}"
-                                                    TextColor="White" />
-                                                <Entry
-                                                    Focused="Entry_Focused"
-                                                    Keyboard="Numeric"
-                                                    MaxLength="7"
-                                                    MinimumWidthRequest="80"
-                                                    Style="{StaticResource entryItem}"
-                                                    Text="{Binding QuantidadeCont}"
-                                                    Unfocused="Entry_Unfocused" />
-                                            </StackLayout>
-                                        </Frame>
+                                        <SwipeView>
+                                            <SwipeView.RightItems>
+                                                <SwipeItems>
+                                                    <SwipeItem
+                                                        BackgroundColor="#eb5757"
+                                                        Clicked="SwipeItem_Clicked"
+                                                        CommandParameter="{Binding .}"
+                                                        IconImageSource="/Imagens/delete.png" />
+
+                                                </SwipeItems>
+                                            </SwipeView.RightItems>
+                                            <Frame
+                                                BackgroundColor="{Binding ColorAviso}"
+                                                HeightRequest="105"
+                                                Style="{StaticResource frameItem}">
+                                                <StackLayout Orientation="Vertical">
+                                                    <StackLayout Orientation="Horizontal">
+                                                        <Button
+                                                            x:Name="camera"
+                                                            Margin="5,5,0,0"
+                                                            Clicked="camera_Clicked"
+                                                            CornerRadius="6"
+                                                            HeightRequest="60"
+                                                            Style="{StaticResource btnCamera}"
+                                                            Text="{Binding IdItem}"
+                                                            VerticalOptions="StartAndExpand"
+                                                            WidthRequest="60" />
+                                                        <Label
+                                                            FontSize="15"
+                                                            HorizontalOptions="FillAndExpand"
+                                                            MaxLines="2"
+                                                            Style="{StaticResource labelCard}"
+                                                            Text="{Binding Descricao}"
+                                                            TextColor="White"
+                                                            VerticalOptions="CenterAndExpand" />
+                                                        <Frame
+                                                            Padding="0"
+                                                            BackgroundColor="Transparent"
+                                                            BorderColor="Transparent"
+                                                            FlowDirection="RightToLeft"
+                                                            HorizontalOptions="Fill"
+                                                            MaximumHeightRequest="60"
+                                                            VerticalOptions="CenterAndExpand">
+                                                            <Frame.GestureRecognizers>
+                                                                <TapGestureRecognizer NumberOfTapsRequired="2" Tapped="OnFrameTapped" />
+                                                            </Frame.GestureRecognizers>
+                                                            <StackLayout Orientation="Horizontal">
+                                                                <Label
+                                                                    Style="{StaticResource labelCard}"
+                                                                    Text="un"
+                                                                    TextColor="White"
+                                                                    VerticalOptions="CenterAndExpand" />
+                                                                <Label
+                                                                    Margin="-8,0,-8,0"
+                                                                    Style="{StaticResource labelCard}"
+                                                                    Text="{Binding QuantidadeUn}"
+                                                                    TextColor="White"
+                                                                    VerticalOptions="CenterAndExpand" />
+                                                                <Label
+                                                                    Style="{StaticResource labelCard}"
+                                                                    Text="{Binding estPrevUn}"
+                                                                    TextColor="White"
+                                                                    VerticalOptions="CenterAndExpand" />
+                                                                <Label
+                                                                    Margin="-8,0,0,0"
+                                                                    Style="{StaticResource labelCard}"
+                                                                    Text="{Binding QuantidadeCont}"
+                                                                    TextColor="White"
+                                                                    VerticalOptions="CenterAndExpand" />
+                                                            </StackLayout>
+                                                        </Frame>
+                                                    </StackLayout>
+
+                                                    <StackLayout Orientation="Horizontal">
+                                                        <Label
+                                                            HorizontalOptions="Start"
+                                                            Style="{StaticResource labelCard}"
+                                                            Text="Est.Previsto :"
+                                                            TextColor="White"
+                                                            VerticalOptions="StartAndExpand" />
+                                                        <Label
+                                                            HorizontalOptions="Start"
+                                                            Style="{StaticResource labelCard}"
+                                                            Text="{Binding estPrev}"
+                                                            TextColor="White"
+                                                            VerticalOptions="StartAndExpand" />
+                                                        <Label
+                                                            Margin="-8,0,0,0"
+                                                            HorizontalOptions="Start"
+                                                            Style="{StaticResource labelCard}"
+                                                            Text="{Binding estPrevUn}"
+                                                            TextColor="White"
+                                                            VerticalOptions="StartAndExpand" />
+                                                        <Label
+                                                            Margin="-8,0,0,0"
+                                                            HorizontalOptions="Start"
+                                                            Style="{StaticResource labelCard}"
+                                                            Text="{Binding estUnP}"
+                                                            TextColor="White"
+                                                            VerticalOptions="StartAndExpand" />
+                                                        <Label
+                                                            Margin="-8,0,0,0"
+                                                            HorizontalOptions="Start"
+                                                            Style="{StaticResource labelCard}"
+                                                            Text="un"
+                                                            TextColor="White"
+                                                            VerticalOptions="StartAndExpand" />
+                                                    </StackLayout>
+                                                </StackLayout>
+                                            </Frame>
+                                        </SwipeView>
                                     </DataTemplate>
                                 </CollectionView.ItemTemplate>
                             </CollectionView>
@@ -155,13 +247,6 @@
                 Orientation="Horizontal"
                 Spacing="10">
                 <Button
-                    x:Name="btnSalvar"
-                    Grid.Column="0"
-                    Clicked="btnSalvar_Clicked"
-                    HorizontalOptions="FillAndExpand"
-                    Style="{StaticResource btnCardGreen}"
-                    Text="Salvar" />
-                <Button
                     x:Name="btnFinalizar"
                     Grid.Column="1"
                     Clicked="btnFinalizar_Clicked"
@@ -172,5 +257,59 @@
             <!--#endregion-->
 
         </StackLayout>
+
+        <!--  Popup de quantidade ocupando 25% da altura da tela  -->
+        <Frame
+            x:Name="pupQuantidade"
+            BackgroundColor="#c7c7c7"
+            CornerRadius="6"
+            HeightRequest="150"
+            HorizontalOptions="CenterAndExpand"
+            IsVisible="false"
+            VerticalOptions="CenterAndExpand"
+            WidthRequest="240">
+            <StackLayout Orientation="Vertical" Spacing="10">
+
+                <StackLayout Orientation="Horizontal">
+                    <Label
+                        HorizontalOptions="Start"
+                        Style="{StaticResource labelCard}"
+                        Text="Un:"
+                        TextColor="Black"
+                        VerticalOptions="End" />
+                    <Entry
+                        x:Name="quantidadeEntry"
+                        Margin="0,0,0,-2"
+                        FontSize="16"
+                        HorizontalOptions="Start"
+                        HorizontalTextAlignment="Center"
+                        Keyboard="Numeric"
+                        TextColor="Black"
+                        VerticalTextAlignment="End"
+                        WidthRequest="60" />
+
+                    <Label
+                        x:Name="lblMedidaPup"
+                        Margin="0,0,2,0"
+                        HorizontalOptions="EndAndExpand"
+                        Style="{StaticResource labelCard}"
+                        TextColor="Black"
+                        VerticalOptions="End" />
+                    <Entry
+                        x:Name="quantidadeEntryMed"
+                        Margin="0,0,0,-2"
+                        FontSize="16"
+                        HorizontalTextAlignment="Center"
+                        Keyboard="Numeric"
+                        TextColor="Black"
+                        VerticalTextAlignment="End"
+                        WidthRequest="60" />
+                </StackLayout>
+                <Button
+                    Clicked="OKButton_Clicked"
+                    Text="OK"
+                    VerticalOptions="CenterAndExpand" />
+            </StackLayout>
+        </Frame>
     </Grid>
 </ContentPage>

@@ -1,13 +1,14 @@
-﻿using AppPousadaPeNaTerra.Classes.API.Principal;
-using AppPousadaPeNaTerra.Classes.Globais;
-using AppPousadaPeNaTerra.Services.Principal;
+﻿using AppGerenciamento.Classes.API.Principal;
+using AppGerenciamento.Classes.Globais;
+using AppGerenciamento.Services.Principal;
 
-namespace AppPousadaPeNaTerra.Suporte
+namespace AppGerenciamento.Suporte
 {
     public class ImagensCache
     {
         #region 1- LOG
         APIErroLog error = new();
+        ExceptionHandlingService _exceptionService = new();
 
         private async Task MetodoErroLog(Exception ex)
         {
@@ -23,7 +24,9 @@ namespace AppPousadaPeNaTerra.Suporte
             };
 
             await error.LogErro(erroLog);
-        }
+            await _exceptionService.ReportError(ex);
+            
+    }
         #endregion
 
         #region 2- CLASSE

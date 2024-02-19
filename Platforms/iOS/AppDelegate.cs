@@ -1,6 +1,6 @@
 ﻿using Foundation;
 
-namespace AppPousadaPeNaTerra;
+namespace AppGerenciamento;
 
 [Register("AppDelegate")]
 public class AppDelegate : MauiUIApplicationDelegate

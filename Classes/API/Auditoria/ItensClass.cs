@@ -1,8 +1,101 @@
-﻿namespace AppPousadaPeNaTerra.Classes.API.Auditoria
+﻿using System.ComponentModel;
+
+namespace AppGerenciamento.Classes.API.Auditoria
 {
-    public class ItensClass
+    public class ItensClass : INotifyPropertyChanged
     {
-        public string QuantidadeCont { get; set; }
+
+        private string _quantidadeUn;
+        public string QuantidadeUn
+        {
+            get { return _quantidadeUn; }
+            set
+            {
+                if (_quantidadeUn != value)
+                {
+                    _quantidadeUn = value;
+                    OnPropertyChanged(nameof(QuantidadeUn));
+                }
+            }
+        }
+
+        private string _quantidadeCont;
+        public string QuantidadeCont
+        {
+            get { return _quantidadeCont; }
+            set
+            {
+                if (_quantidadeCont != value)
+                {
+                    _quantidadeCont = value;
+                    OnPropertyChanged(nameof(QuantidadeCont));
+                    OnPropertyChanged(nameof(ColorAviso));
+                    OnPropertyChanged(nameof(QuantidadeUn));
+                }
+            }
+        }
+
+        private Color _colorAviso;
+        public Color ColorAviso
+        {
+            get
+            {
+                // Lógica para determinar a cor com base na quantidade
+                Color previsto = Color.FromRgba("#075069");
+
+                if (!string.IsNullOrEmpty(QuantidadeCont))
+                {
+                    Double qt, qtPr;
+
+                    if (QuantidadeCont != null)
+                    {
+                        qt = String.IsNullOrEmpty(QuantidadeCont) ? 0 : Convert.ToDouble(QuantidadeCont);
+                    }
+                    else
+                    {
+                        qt = 0;
+                    }
+
+                    if (estPrev != null)
+                    {
+                        qtPr = String.IsNullOrEmpty(estPrev) ? 0 : Convert.ToDouble(estPrev);
+                    }
+                    else
+                    {
+                        qtPr = 0;
+                    }
+
+                    if (qt > qtPr)
+                    {
+                        previsto = Color.FromRgba("#EBB31F");
+                    }
+                    else if (qt < qtPr)
+                    {
+                        previsto = Color.FromRgba("#b03131");
+                    }
+
+                    return previsto;
+                }
+
+                return previsto;
+            }
+            set
+            {
+                _colorAviso = value;
+                OnPropertyChanged(nameof(ColorAviso));
+            }
+        }
+
+        public string QuantidadeMed { get; set; }
+        public string QtdFinalIten { get; set; }
+
+        public string estPrev { get; set; }
+
+        public string estUnP { get; set; }
+
+        public string estPrevUn { get; set; }
+
+        public string estPrevUnAp { get; set; }
 
         public int IdItem { get; set; }
 
@@ -13,12 +106,14 @@
         public string CodItemCb { get; set; }
 
         public string Descricao { get; set; }
+        public string estAntigo { get; set; }
+        public string vendaPeriodo { get; set; }
 
         public decimal? Preco { get; set; }
 
         public int IdCategoria { get; set; }
 
-        public int? IdGrupo { get; set; }
+        public int IdGrupo { get; set; }
 
         public int? IdSubgrupo { get; set; }
 
@@ -65,5 +160,13 @@
         public string Unidade { get; set; }
 
         public long? IdFt { get; set; }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected virtual void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
     }
 }
+    

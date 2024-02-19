@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace AppPousadaPeNaTerra.Classes.API.Auditoria
+namespace AppGerenciamento.Classes.API.Auditoria
 {
     public class EstoqueClass
     {
@@ -40,7 +40,7 @@ namespace AppPousadaPeNaTerra.Classes.API.Auditoria
 
         public int? IdLista { get; set; }
 
-        public decimal EstoqueAtual { get; set; }
+        public decimal Atual { get; set; }
     }
 
     public class DataContagem

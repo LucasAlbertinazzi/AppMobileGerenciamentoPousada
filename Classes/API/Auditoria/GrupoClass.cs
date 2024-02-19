@@ -1,4 +1,4 @@
-﻿namespace AppPousadaPeNaTerra.Classes.API.Auditoria
+﻿namespace AppGerenciamento.Classes.API.Auditoria
 {
     public class GrupoClass
     {

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AppPousadaPeNaTerra.Classes.API.Principal
+namespace AppGerenciamento.Classes.API.Principal
 {
     public class NotificacaoClass
     {

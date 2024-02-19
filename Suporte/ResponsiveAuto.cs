@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AppPousadaPeNaTerra.Suporte
+namespace AppGerenciamento.Suporte
 {
     public static class ResponsiveAuto
     {

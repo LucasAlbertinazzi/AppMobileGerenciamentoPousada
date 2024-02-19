@@ -1,12 +1,13 @@
-using AppPousadaPeNaTerra.Classes.Globais;
-using AppPousadaPeNaTerra.Services.Principal;
+using AppGerenciamento.Classes.Globais;
+using AppGerenciamento.Services.Principal;
 using static Microsoft.Maui.Controls.Button.ButtonContentLayout;
 using static Microsoft.Maui.Controls.Button;
-using AppPousadaPeNaTerra.ViewModel.Principal;
+using AppGerenciamento.ViewModel.Principal;
 using static MenuPrincipalClass;
-using AppPousadaPeNaTerra.Classes.API.Principal;
+using AppGerenciamento.Classes.API.Principal;
+using AppGerenciamento.Suporte;
 
-namespace AppPousadaPeNaTerra.Views;
+namespace AppGerenciamento.Views;
 
 public partial class VMenuPrincipal : ContentPage
 {
@@ -15,6 +16,7 @@ public partial class VMenuPrincipal : ContentPage
     APIMenuPrincipal aPIMenuPrincipal = new APIMenuPrincipal();
 
     APIErroLog error = new();
+    ExceptionHandlingService _exceptionService = new();
     #endregion
 
     #region 2 - METODOS CONSTRUTORES
@@ -41,7 +43,7 @@ public partial class VMenuPrincipal : ContentPage
             await MetodoErroLog(ex);
             throw;
         }
-        
+
     }
 
     #endregion
@@ -62,6 +64,7 @@ public partial class VMenuPrincipal : ContentPage
         };
 
         await error.LogErro(erroLog);
+        await _exceptionService.ReportError(ex);
     }
 
     private void Inicializa()
@@ -77,7 +80,7 @@ public partial class VMenuPrincipal : ContentPage
             MetodoErroLog(ex);
             return;
         }
-        
+
     }
 
     private async Task CreateMenu()
@@ -204,7 +207,7 @@ public partial class VMenuPrincipal : ContentPage
             MetodoErroLog(ex);
             return 0;
         }
-        
+
     }
 
     protected override bool OnBackButtonPressed()
@@ -237,10 +240,10 @@ public partial class VMenuPrincipal : ContentPage
         }
         catch (Exception ex)
         {
-             MetodoErroLog(ex);
+            MetodoErroLog(ex);
             return;
         }
-       
+
     }
 
     private async void MenuItem_Clicked(object sender, EventArgs e)

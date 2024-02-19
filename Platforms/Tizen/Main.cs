@@ -2,7 +2,7 @@ using System;
 using Microsoft.Maui;
 using Microsoft.Maui.Hosting;
 
-namespace AppPousadaPeNaTerra;
+namespace AppGerenciamento;
 
 class Program : MauiApplication
 {

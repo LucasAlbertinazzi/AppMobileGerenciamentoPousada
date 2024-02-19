@@ -1,15 +1,17 @@
-﻿using AppPousadaPeNaTerra.Classes.API.Auditoria;
-using AppPousadaPeNaTerra.Classes.API.Principal;
-using AppPousadaPeNaTerra.Classes.Globais;
-using AppPousadaPeNaTerra.Services.Principal;
+﻿using AppGerenciamento.Classes.API.Auditoria;
+using AppGerenciamento.Classes.API.Principal;
+using AppGerenciamento.Classes.Globais;
+using AppGerenciamento.Services.Principal;
+using AppGerenciamento.Suporte;
 using Newtonsoft.Json;
 
-namespace AppPousadaPeNaTerra.Services.Auditoria
+namespace AppGerenciamento.Services.Auditoria
 {
     public class APIGruposAud
     {
         #region 1- LOG
         APIErroLog error = new();
+        ExceptionHandlingService _exceptionService = new();
         private async Task MetodoErroLog(Exception ex)
         {
             var erroLog = new ErrorLogClass
@@ -24,7 +26,9 @@ namespace AppPousadaPeNaTerra.Services.Auditoria
             };
 
             await error.LogErro(erroLog);
-        }
+            await _exceptionService.ReportError(ex);
+            
+    }
         #endregion
 
         #region 2- API

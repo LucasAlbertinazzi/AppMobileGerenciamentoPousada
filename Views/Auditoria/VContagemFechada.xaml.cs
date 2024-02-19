@@ -1,11 +1,12 @@
-using AppPousadaPeNaTerra.Classes.API.Auditoria;
-using AppPousadaPeNaTerra.Classes.API.Principal;
-using AppPousadaPeNaTerra.Classes.Globais;
-using AppPousadaPeNaTerra.Model.Auditoria;
-using AppPousadaPeNaTerra.Services.Auditoria;
-using AppPousadaPeNaTerra.Services.Principal;
+using AppGerenciamento.Classes.API.Auditoria;
+using AppGerenciamento.Classes.API.Principal;
+using AppGerenciamento.Classes.Globais;
+using AppGerenciamento.Model.Auditoria;
+using AppGerenciamento.Services.Auditoria;
+using AppGerenciamento.Services.Principal;
+using AppGerenciamento.Suporte;
 
-namespace AppPousadaPeNaTerra.Views;
+namespace AppGerenciamento.Views;
 
 public partial class VContagemFechada : ContentPage
 {
@@ -13,6 +14,7 @@ public partial class VContagemFechada : ContentPage
     APIEstoqueAud apiEstoque = new();
     APILocalAud apiLocal = new();
     APIErroLog error = new();
+    ExceptionHandlingService _exceptionService = new();
 
     List<ContagemAbertaModel> card_fechadas = new List<ContagemAbertaModel>();
     #endregion
@@ -65,6 +67,7 @@ public partial class VContagemFechada : ContentPage
         };
 
         await error.LogErro(erroLog);
+        await _exceptionService.ReportError(ex);
     }
 
     private void DatasInicial()
@@ -98,7 +101,7 @@ public partial class VContagemFechada : ContentPage
             card_fechadas.Clear();
             cvFechadas.ItemsSource = null;
 
-            if(lista != null && lista.Count > 0)
+            if (lista != null && lista.Count > 0)
             {
                 avisoNoList.IsVisible = false;
 

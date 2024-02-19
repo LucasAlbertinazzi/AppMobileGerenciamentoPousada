@@ -1,14 +1,16 @@
-﻿using AppPousadaPeNaTerra.Classes.API.Principal;
-using AppPousadaPeNaTerra.Classes.Globais;
-using AppPousadaPeNaTerra.Services.Principal;
-using AppPousadaPeNaTerra.Views;
+﻿using AppGerenciamento.Classes.API.Principal;
+using AppGerenciamento.Classes.Globais;
+using AppGerenciamento.Services.Principal;
+using AppGerenciamento.Suporte;
+using AppGerenciamento.Views;
 
-namespace AppPousadaPeNaTerra;
+namespace AppGerenciamento;
 
 public partial class AppShell : Shell
 {
     #region 1- VARIAVEIS
     APIErroLog error = new();
+    ExceptionHandlingService _exceptionService = new();
     #endregion
 
     #region 2 - METODOS CONSTRUTORES
@@ -17,16 +19,16 @@ public partial class AppShell : Shell
         InitializeComponent();
     }
 
-    private void Shell_Loaded(object sender, EventArgs e)
+    private async void Shell_Loaded(object sender, EventArgs e)
     {
         try
         {
-            double dist = DefineEspaco();
+            double dist = await DefineEspaco();
             btnSettings.Margin = new Thickness(0, dist, 0, 0);
         }
         catch (Exception ex)
         {
-            MetodoErroLog(ex);
+            await MetodoErroLog(ex);
             return;
         }
     }
@@ -34,7 +36,7 @@ public partial class AppShell : Shell
     #endregion
 
     #region 3- METODOS
-    private double DefineEspaco()
+    private async Task<double> DefineEspaco()
     {
         try
         {
@@ -45,7 +47,7 @@ public partial class AppShell : Shell
         }
         catch (Exception ex)
         {
-            MetodoErroLog(ex);
+            await MetodoErroLog(ex);
             return 0;
         }
     }
@@ -64,11 +66,20 @@ public partial class AppShell : Shell
         };
 
         await error.LogErro(erroLog);
+        await _exceptionService.ReportError(ex);
     }
 
+    public void Permissao()
+    {
+        if (Convert.ToInt32(InfoGlobal.funcao) != 4)
+        {
+            btnSettings.IsVisible = false;
+        }
+    }
     #endregion
 
     #region 4- EVENTOS DE CONTROLE
+    
     private async void OnLogoutClicked(object sender, EventArgs e)
     {
         try

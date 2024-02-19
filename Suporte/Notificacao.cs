@@ -1,14 +1,15 @@
 ﻿using Plugin.LocalNotification.AndroidOption;
 using Plugin.LocalNotification;
-using AppPousadaPeNaTerra.Classes.API.Principal;
-using AppPousadaPeNaTerra.Services.Principal;
+using AppGerenciamento.Classes.API.Principal;
+using AppGerenciamento.Services.Principal;
 
-namespace AppPousadaPeNaTerra.Suporte
+namespace AppGerenciamento.Suporte
 {
     public class Notificacao
     {
         #region 1- LOG
         APIErroLog error = new();
+        ExceptionHandlingService _exceptionService = new();
 
         private async Task MetodoErroLog(Exception ex)
         {
@@ -24,6 +25,8 @@ namespace AppPousadaPeNaTerra.Suporte
             };
 
             await error.LogErro(erroLog);
+            await _exceptionService.ReportError(ex);
+
         }
         #endregion
 
